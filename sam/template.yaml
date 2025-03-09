@@ -60,29 +60,29 @@ Resources:
               ApiKeyRequired: true
             RestApiId: !Ref SisvirApiGateway
   
-  # UsersFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     CodeUri: functions/core/users/
-  #     Role: !GetAtt LambdaGeneralRole.Arn
-  #     MemorySize: 128
-  #     Layers:
-  #       - !Ref DynamoDBLayer
-  #       - !Ref ApplicationLayer
-  #     Environment:
-  #       Variables:
-  #         stage: !Ref ApplicationStageName
-  #         Region: !Ref 'AWS::Region'
-  #         stageName: !Join [ "", [ !Ref ApplicationName, !Ref ApplicationStageName ] ]
-  #     Events:
-  #       Login:
-  #         Type: Api
-  #         Properties:
-  #           Path: /sisvir/core/users
-  #           Method: post
-  #           Auth:
-  #             ApiKeyRequired: true
-  #           RestApiId: !Ref SisvirApiGateway
+  UsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/core/users/
+      Role: !GetAtt LambdaGeneralRole.Arn
+      MemorySize: 128
+      Layers:
+        - !Ref DynamoDBLayer
+        - !Ref ApplicationDomainCoreLayer
+      Environment:
+        Variables:
+          stage: !Ref ApplicationStageName
+          Region: !Ref 'AWS::Region'
+          stageName: !Join [ "", [ !Ref ApplicationName, !Ref ApplicationStageName ] ]
+      Events:
+        Login:
+          Type: Api
+          Properties:
+            Path: /sisvir/core/users
+            Method: post
+            Auth:
+              ApiKeyRequired: true
+            RestApiId: !Ref SisvirApiGateway
 
   #######################################################################
   # Layers
