@@ -59,6 +59,30 @@ Resources:
             Auth:
               ApiKeyRequired: true
             RestApiId: !Ref SisvirApiGateway
+  
+  # UsersFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: functions/core/users/
+  #     Role: !GetAtt LambdaGeneralRole.Arn
+  #     MemorySize: 128
+  #     Layers:
+  #       - !Ref DynamoDBLayer
+  #       - !Ref ApplicationLayer
+  #     Environment:
+  #       Variables:
+  #         stage: !Ref ApplicationStageName
+  #         Region: !Ref 'AWS::Region'
+  #         stageName: !Join [ "", [ !Ref ApplicationName, !Ref ApplicationStageName ] ]
+  #     Events:
+  #       Login:
+  #         Type: Api
+  #         Properties:
+  #           Path: /sisvir/core/users
+  #           Method: post
+  #           Auth:
+  #             ApiKeyRequired: true
+  #           RestApiId: !Ref SisvirApiGateway
 
   #######################################################################
   # Layers
@@ -75,10 +99,10 @@ Resources:
     Metadata:
       BuildMethod: python3.12
   
-  ApplicationLayer:
+  ApplicationDomainCoreLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
-      LayerName: !Join ["-", [!Ref ApplicationName, !Ref ApplicationStageName, dynamodb, layer]]
+      LayerName: !Join ["-", [!Ref ApplicationName, !Ref ApplicationStageName, application-domain-core, layer]]
       Description: Get application and domain core in layers
       ContentUri: layers/app/
       CompatibleRuntimes:
@@ -107,26 +131,21 @@ Resources:
           ThrottlingRateLimit: 10000  # requests per second per AWS account para esta API
       Auth:
         AddDefaultAuthorizerToCorsPreflight: False
-
-  SisvirUsagePlan:
-    Type: AWS::ApiGateway::UsagePlan
-    Properties:
-      UsagePlanName: !Join [ "-", [ !Ref ApplicationName, !Ref ApplicationStageName, usage, plan ] ]
-      Description: Usage plan for Sisvir API
-      Quota:
-        Limit: 100000
-        Period: DAY
-      Throttle:
-        RateLimit: 10000
-        BurstLimit: 5000
-      ApiStages:
-        - ApiId: !Ref SisvirApiGateway
-          Stage: !Ref ApplicationStageName
-
+        UsagePlan:
+          UsagePlanName: !Join [ "-", [ !Ref ApplicationName, !Ref ApplicationStageName, usage, plan]]
+          CreateUsagePlan: PER_API
+          Description: Usage plan for sisvir API operations
+          Quota:
+            Limit: 100000
+            Period: DAY
+          Throttle:
+            BurstLimit: 5000 #requests per second per usageplan for this api
+            RateLimit: 10000 #requests per second per usageplan for this api
+  
   SisvirApiKey:
     Type: AWS::ApiGateway::ApiKey
     Properties:
-      Name: !Join [ "-", [ !Ref ApplicationName, !Ref ApplicationStageName, "api-key" ] ]
+      Name: !Join [ "-", [ !Ref ApplicationName, !Ref ApplicationStageName, "api-key" ] ]  
       Enabled: true
       StageKeys:
         - RestApiId: !Ref SisvirApiGateway
@@ -137,7 +156,7 @@ Resources:
     Properties:
       KeyId: !Ref SisvirApiKey
       KeyType: API_KEY
-      UsagePlanId: !Ref SisvirUsagePlan
+      UsagePlanId: !Ref SisvirApiGateway.UsagePlan
 
   ###################################
   # LambdaGeneralRole
@@ -253,3 +272,7 @@ Resources:
         SSEEnabled: True
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: True
+
+Outputs:
+  StageNameOutput:
+    Value: !Ref ApplicationStageName

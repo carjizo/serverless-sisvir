@@ -9,3 +9,15 @@ confirm_changeset = true
 capabilities = "CAPABILITY_NAMED_IAM"
 parameter_overrides = "ApplicationName=\"sisvir\" ApplicationStageName=\"dev\""
 image_repositories = []
+
+version = 0.1
+[qa.deploy.parameters]
+stack_name = "sisvir-qa"
+resolve_s3 = true
+s3_prefix = "sisvir-qa"
+region = "us-east-1"
+profile = "sisvir"
+confirm_changeset = true
+capabilities = "CAPABILITY_NAMED_IAM"
+parameter_overrides = "ApplicationName=\"sisvir\" ApplicationStageName=\"qa\""
+image_repositories = []
