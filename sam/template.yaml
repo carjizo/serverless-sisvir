@@ -47,10 +47,7 @@ Resources:
         - !Ref DynamoDBLayer
       Environment:
         Variables:
-#          UploadBucket: !Ref SbsCoreBucket
-#          SourceEmail: !Ref SourceEmail
           stage: !Ref ApplicationStageName
-#          apiId: !Ref MyApiWebSocket
           Region: !Ref 'AWS::Region'
           stageName: !Join [ "", [ !Ref ApplicationName, !Ref ApplicationStageName ] ]
       Events:
@@ -64,7 +61,7 @@ Resources:
             RestApiId: !Ref SisvirApiGateway
 
   #######################################################################
-  # Dynamo models
+  # Layers
   #######################################################################
   DynamoDBLayer:
     Type: AWS::Serverless::LayerVersion
@@ -72,6 +69,18 @@ Resources:
       LayerName: !Join ["-", [!Ref ApplicationName, !Ref ApplicationStageName, dynamodb, layer]]
       Description: Get dynamodb pynamodb in layers
       ContentUri: layers/model/dynamodb/
+      CompatibleRuntimes:
+        - python3.12
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: python3.12
+  
+  ApplicationLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Join ["-", [!Ref ApplicationName, !Ref ApplicationStageName, dynamodb, layer]]
+      Description: Get application and domain core in layers
+      ContentUri: layers/app/
       CompatibleRuntimes:
         - python3.12
       RetentionPolicy: Delete
@@ -228,32 +237,19 @@ Resources:
   # DynamoDB Table
   # Table for the application transactions
   #######################################################################
-#  CollaboratorTable:
-#    Type: AWS::DynamoDB::Table
-#    DeletionPolicy: Retain
-#    Properties:
-#      TableName: !Join [ "-", [ !Ref ApplicationName, !Ref ApplicationStageName, collaborators ] ]
-#      BillingMode: PAY_PER_REQUEST
-#      AttributeDefinitions:
-#        - AttributeName: id
-#          AttributeType: S
-#        - AttributeName: ruc
-#          AttributeType: S
-#        - AttributeName: identityNumber
-#          AttributeType: S
-#      KeySchema:
-#        - AttributeName: id
-#          KeyType: HASH
-#      GlobalSecondaryIndexes:
-#        - IndexName: gsiCollaboratorIdentityNumberRuc
-#          KeySchema:
-#            - AttributeName: ruc
-#              KeyType: HASH
-#            - AttributeName: identityNumber
-#              KeyType: RANGE
-#          Projection:
-#            ProjectionType: ALL
-#      SSESpecification:
-#        SSEEnabled: True
-#      PointInTimeRecoverySpecification:
-#        PointInTimeRecoveryEnabled: True
+  UserTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Join ["-", [!Ref ApplicationName, !Ref ApplicationStageName, users]]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: identityNumber
+        AttributeType: S
+      KeySchema:
+      - AttributeName: identityNumber
+        KeyType: HASH
+      SSESpecification:
+        SSEEnabled: True
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: True
