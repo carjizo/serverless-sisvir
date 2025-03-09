@@ -1,0 +1,4 @@
+.aws-sam
+.vscode/
+# idea folder, uncomment if you don't need it
+.idea

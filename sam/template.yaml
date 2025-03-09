@@ -1,0 +1,259 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam
+  Sample SAM Template for sisvir project
+
+Globals:
+  Function:
+    Handler: app.lambda_handler
+    Runtime: python3.12
+    Timeout: 300
+    MemorySize: 128
+    Tracing: Active
+    Environment:
+      Variables:
+        application: !Ref ApplicationName
+        stage: !Ref ApplicationStageName
+  Api:
+    TracingEnabled: true
+    Cors:
+      AllowMethods: "'*'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: sisvir
+  ApplicationStageName:
+    Type: String
+    Default: dev
+  SisvirBaseDomainName:
+    Type: String
+    Default: sisvir.com
+
+########################
+# Resources Lambdas
+########################
+Resources:
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/core/login/
+      Role: !GetAtt LambdaGeneralRole.Arn
+      MemorySize: 128
+      Layers:
+        - !Ref DynamoDBLayer
+      Environment:
+        Variables:
+#          UploadBucket: !Ref SbsCoreBucket
+#          SourceEmail: !Ref SourceEmail
+          stage: !Ref ApplicationStageName
+#          apiId: !Ref MyApiWebSocket
+          Region: !Ref 'AWS::Region'
+          stageName: !Join [ "", [ !Ref ApplicationName, !Ref ApplicationStageName ] ]
+      Events:
+        Login:
+          Type: Api
+          Properties:
+            Path: /sisvir/core/login
+            Method: post
+            Auth:
+              ApiKeyRequired: true
+            RestApiId: !Ref SisvirApiGateway
+
+  #######################################################################
+  # Dynamo models
+  #######################################################################
+  DynamoDBLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Join ["-", [!Ref ApplicationName, !Ref ApplicationStageName, dynamodb, layer]]
+      Description: Get dynamodb pynamodb in layers
+      ContentUri: layers/model/dynamodb/
+      CompatibleRuntimes:
+        - python3.12
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: python3.12
+
+  ######################################################
+  # API Gateway
+  # APIs for core and user application resources
+  ######################################################
+  SisvirApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Join [ "-", [ !Ref ApplicationName, !Ref ApplicationStageName, api ] ]
+      StageName: !Ref ApplicationStageName
+      TracingEnabled: True
+      MethodSettings:
+        - DataTraceEnabled: True
+          LoggingLevel: INFO
+          MetricsEnabled: True
+          ResourcePath: '/*'
+          HttpMethod: '*'
+          ThrottlingBurstLimit: 5000  # requests per second per AWS account para esta API
+          ThrottlingRateLimit: 10000  # requests per second per AWS account para esta API
+      Auth:
+        AddDefaultAuthorizerToCorsPreflight: False
+
+  SisvirUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      UsagePlanName: !Join [ "-", [ !Ref ApplicationName, !Ref ApplicationStageName, usage, plan ] ]
+      Description: Usage plan for Sisvir API
+      Quota:
+        Limit: 100000
+        Period: DAY
+      Throttle:
+        RateLimit: 10000
+        BurstLimit: 5000
+      ApiStages:
+        - ApiId: !Ref SisvirApiGateway
+          Stage: !Ref ApplicationStageName
+
+  SisvirApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: !Join [ "-", [ !Ref ApplicationName, !Ref ApplicationStageName, "api-key" ] ]
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref SisvirApiGateway
+          StageName: !Ref ApplicationStageName
+
+  SisvirUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref SisvirApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref SisvirUsagePlan
+
+  ###################################
+  # LambdaGeneralRole
+  ##################################
+  LambdaGeneralRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: TimeLambdaXRayPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "xray:PutTraceSegments"
+                  - "xray:PutTelemetryRecords"
+                Effect: Allow
+                Resource: "*"
+        - PolicyName: TimeLambdaCloudWatchPolicy
+          PolicyDocument:
+            Statement:
+              Effect: Allow
+              Action:
+                - "cloudwatch:*"
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
+              Resource: "arn:aws:logs:*:*:*"
+        - PolicyName: DynamoDBCrudPolicy
+          PolicyDocument:
+            Statement:
+              Effect: Allow
+              Action:
+                - "dynamodb:CreateTable"
+                - "dynamodb:GetItem"
+                - "dynamodb:DeleteItem"
+                - "dynamodb:PutItem"
+                - "dynamodb:Scan"
+                - "dynamodb:Query"
+                - "dynamodb:UpdateItem"
+                - "dynamodb:BatchWriteItem"
+                - "dynamodb:BatchGetItem"
+                - "dynamodb:DescribeTable"
+                - "dynamodb:ConditionCheckItem"
+              Resource: "*"
+        - PolicyName: LambdaInvokePolicy
+          PolicyDocument:
+            Statement:
+              Effect: Allow
+              Action:
+                - "lambda:InvokeFunction"
+              Resource: "*"
+
+  ApiGatewayCloudWatchLogsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: ApiGatewayLogsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:DescribeLogGroups"
+                  - "logs:DescribeLogStreams"
+                  - "logs:PutLogEvents"
+                  - "logs:GetLogEvents"
+                  - "logs:FilterLogEvents"
+                Effect: Allow
+                Resource: "*"
+
+  Account:
+    Type: 'AWS::ApiGateway::Account'
+    Properties:
+      CloudWatchRoleArn: !GetAtt
+        - ApiGatewayCloudWatchLogsRole
+        - Arn
+
+  #######################################################################
+  # DynamoDB Table
+  # Table for the application transactions
+  #######################################################################
+#  CollaboratorTable:
+#    Type: AWS::DynamoDB::Table
+#    DeletionPolicy: Retain
+#    Properties:
+#      TableName: !Join [ "-", [ !Ref ApplicationName, !Ref ApplicationStageName, collaborators ] ]
+#      BillingMode: PAY_PER_REQUEST
+#      AttributeDefinitions:
+#        - AttributeName: id
+#          AttributeType: S
+#        - AttributeName: ruc
+#          AttributeType: S
+#        - AttributeName: identityNumber
+#          AttributeType: S
+#      KeySchema:
+#        - AttributeName: id
+#          KeyType: HASH
+#      GlobalSecondaryIndexes:
+#        - IndexName: gsiCollaboratorIdentityNumberRuc
+#          KeySchema:
+#            - AttributeName: ruc
+#              KeyType: HASH
+#            - AttributeName: identityNumber
+#              KeyType: RANGE
+#          Projection:
+#            ProjectionType: ALL
+#      SSESpecification:
+#        SSEEnabled: True
+#      PointInTimeRecoverySpecification:
+#        PointInTimeRecoveryEnabled: True
