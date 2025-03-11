@@ -36,30 +36,7 @@ Parameters:
 ########################
 # Resources Lambdas
 ########################
-Resources:
-  LoginFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: functions/core/login/
-      Role: !GetAtt LambdaGeneralRole.Arn
-      MemorySize: 128
-      Layers:
-        - !Ref DynamoDBLayer
-      Environment:
-        Variables:
-          stage: !Ref ApplicationStageName
-          Region: !Ref 'AWS::Region'
-          stageName: !Join [ "", [ !Ref ApplicationName, !Ref ApplicationStageName ] ]
-      Events:
-        Login:
-          Type: Api
-          Properties:
-            Path: /sisvir/core/login
-            Method: post
-            Auth:
-              ApiKeyRequired: true
-            RestApiId: !Ref SisvirApiGateway
-  
+Resources:  
   UsersFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -75,15 +52,14 @@ Resources:
           Region: !Ref 'AWS::Region'
           stageName: !Join [ "", [ !Ref ApplicationName, !Ref ApplicationStageName ] ]
       Events:
-        Login:
+        GetUserById:
           Type: Api
           Properties:
-            Path: /sisvir/core/users
-            Method: post
+            Path: /sisvir/core/users/{identityNumber}
+            Method: get
             Auth:
               ApiKeyRequired: true
             RestApiId: !Ref SisvirApiGateway
-
   #######################################################################
   # Layers
   #######################################################################
