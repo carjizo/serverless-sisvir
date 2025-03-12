@@ -10,7 +10,5 @@ environment = os.environ
 def lambda_handler(event, _):
     logger.info(f"event: {event}")
     logger.info(f"environment: {environment}")
-    print("event", event)
     api_router = UserRouter(event)
-    print("444444")
     api_router.route()
