@@ -117,11 +117,11 @@ Resources:
           Throttle:
             BurstLimit: 5000 #requests per second per usageplan for this api
             RateLimit: 10000 #requests per second per usageplan for this api
-  
+
   SisvirApiKey:
     Type: AWS::ApiGateway::ApiKey
     Properties:
-      Name: !Join [ "-", [ !Ref ApplicationName, !Ref ApplicationStageName, "api-key" ] ]  
+      Name: !Join [ "-", [ !Ref ApplicationName, !Ref ApplicationStageName, "api-key" ] ]
       Enabled: true
       StageKeys:
         - RestApiId: !Ref SisvirApiGateway

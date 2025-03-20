@@ -3,15 +3,15 @@ import json
 
 from domain.repositories.UserRepository import UserRepository
 from domain.models.UserModel import UserModel
-from timeModel import User
+from timeModel import UserEntity
 
 class UserRepositoryImpl(UserRepository):
-    def get_all(self) -> List[UserModel]:
+    def find_all(self) -> List[UserModel]:
         return []
 
-    def get_by_id(self, identity_number: str) -> Optional[UserModel]:
-        userItem = User.get(identity_number)
-        collabJson = json.loads(json.dumps(userItem.to_dict(), default=User.myconverter))
+    def find_by_id(self, identity_number: str) -> Optional[UserModel]:
+        userItem = UserEntity.get(identity_number)
+        collabJson = json.loads(json.dumps(userItem.to_dict(), default=UserEntity.myconverter))
         user: UserModel = UserModel(
             identity_number=collabJson.get("identityNumber", None),
             full_name=collabJson.get("fullName", None),
@@ -30,5 +30,5 @@ class UserRepositoryImpl(UserRepository):
     def update(self, identity_number: str, product: UserModel) -> Optional[UserModel]:
         return {}
 
-    def delete(self, identity_number: str) -> bool:
+    def delete_by_id(self, identity_number: str) -> bool:
         return True

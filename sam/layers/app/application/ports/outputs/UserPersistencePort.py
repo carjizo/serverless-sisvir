@@ -3,7 +3,7 @@ from abc import ABC, abstractclassmethod
 
 from domain.models.UserModel import UserModel
 
-class UserRepository(ABC):
+class UserPersistencePort(ABC):
     @abstractclassmethod
     def find_all(self) -> List[UserModel]:
         raise NotImplemented
@@ -13,11 +13,7 @@ class UserRepository(ABC):
         raise NotImplemented
 
     @abstractclassmethod
-    def add(self, user: UserModel) -> UserModel:
-        raise NotImplemented
-
-    @abstractclassmethod
-    def update(self, identity_number: str, product: UserModel) -> Optional[UserModel]:
+    def save(self, user: UserModel) -> UserModel:
         raise NotImplemented
 
     @abstractclassmethod

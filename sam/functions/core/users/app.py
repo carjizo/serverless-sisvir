@@ -1,7 +1,7 @@
 import logging
 import os
 
-from infra_estructure.routers.UserRouter import UserRouter
+from infra_estructure.adapters.inputs.rest.routers.UserRouter import UserRouter
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

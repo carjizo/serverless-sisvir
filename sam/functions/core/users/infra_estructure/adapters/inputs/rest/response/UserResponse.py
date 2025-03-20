@@ -1,8 +1,6 @@
 from typing import Optional
 
-# from domain.exceptions.UserException import FullNameIsEmpty, IdMacIsEmpty
-
-class UserModel:
+class UserResponse:
     def __init__(self,
                 identity_number: Optional[str] = None,
                 full_name: Optional[str] = None,
@@ -12,9 +10,6 @@ class UserModel:
                 weight: Optional[int] = None,
                 critical_value: Optional[int] = None ,
                 active: Optional[int] = True):
-
-        # self.__validate_full_name(full_name)
-        # self.__validate_id_mac(id_mac)
 
         self._identity_number = identity_number
         self._full_name = full_name
@@ -133,8 +128,8 @@ class UserModelBuilder:
         self._active = active
         return self
 
-    def build(self) -> UserModel:
-        return UserModel(self._identity_number,
+    def build(self) -> UserResponse:
+        return UserResponse(self._identity_number,
                         self._full_name,
                         self._id_mac,
                         self._id_pathological_history,
@@ -142,13 +137,3 @@ class UserModelBuilder:
                         self._weight,
                         self._critical_value,
                         self._active)
-
-    # @staticmethod
-    # def __validate_full_name(full_name: str):
-    #     if full_name is None or full_name == "":
-    #         raise FullNameIsEmpty
-    #
-    # @staticmethod
-    # def __validate_id_mac(id_mac: str):
-    #     if id_mac is None or id_mac == "":
-    #         raise IdMacIsEmpty

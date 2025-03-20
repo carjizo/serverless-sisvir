@@ -34,7 +34,7 @@ class ConvertAttr(object):
             rval[key] = self.__getattribute__(key)
         return rval
 
-class User(Model,ConvertAttr):
+class UserEntity(Model,ConvertAttr):
     class Meta:
         table_name = f"{APP}-{STAGE}-users"
         region = REGION

@@ -12,21 +12,21 @@ class UserUseCases(ABC):
         self.user_repository = user_repository
 
     @abstractclassmethod
-    def all_users(self) -> List[UserModel]:
+    def find_all(self) -> List[UserModel]:
         raise NotImplemented
 
     @abstractclassmethod
-    def user_detail(self, identity_number: str) -> UserModel:
+    def find_by_id(self, identity_number: str) -> UserModel:
         raise NotImplemented
 
     @abstractclassmethod
-    def register_user(self, user: UserModel) -> UserModel:
+    def save(self, user: UserModel) -> UserModel:
         raise NotImplemented
 
     @abstractclassmethod
-    def update_user(self, identity_number: int, user: UserModel) -> UserModel:
+    def update(self, identity_number: int, user: UserModel) -> UserModel:
         raise NotImplemented
 
     @abstractclassmethod
-    def delete_user(self, identity_number: int) -> bool:
+    def delete_by_id(self, identity_number: int) -> bool:
         raise NotImplemented
